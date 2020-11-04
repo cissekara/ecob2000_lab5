@@ -1,0 +1,366 @@
+HW 5
+By Serigne Cheikh Modou Kara Cisse
+Due November 02, 2020 at 0800
+attach(acs2017_ny)
+use_varb <- (AGE >= 25) & (AGE <= 55) & (LABFORCE == 2) & (WKSWORK2 > 4) & (UHRSWORK >= 35) & (female ==1) & ((educ_college == 1) | (educ_advdeg == 1))
+dat_use <- subset(acs2017_ny,use_varb)  
+dat_use_non <- subset(acs2017_ny,use_varb_non) 
+detach(acs2017_ny)
+attach(dat_use)
+summary(dat_use)
+print(dat_use)
+detach(acs2017_ny)
+
+#I want to focus on the impact of education for females (African American, Asian and Hispanics) in the labor force and their income level
+
+#I will upload packages such as car,cardata, lmtest, zoo, stargazer, survival, sandwich, ggplot2 packages
+
+#As advised by Prof. Foster, I try to understand my  data by focusing on full-time females workers (African-American, Asian, Hispanics females) clocking in 35 hours
+
+suppressMessages(attach(dat_use))
+#Let's see the effect of gender only in the labor force
+model1<-lm(INCWAGE~AGE+I(AGE^2)+female,data=dat_use)                                   
+summary(model1)
+Call:
+lm(formula = INCWAGE ~ AGE + I(AGE^2) + female, data = dat_use)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-93628 -33235 -12346  13043 588004 
+
+Coefficients: (1 not defined because of singularities)
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -94615.289  14437.333  -6.554 5.86e-11 ***
+AGE           7809.121    754.053  10.356  < 2e-16 ***
+I(AGE^2)       -80.987      9.448  -8.572  < 2e-16 ***
+female              NA         NA      NA       NA    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 71420 on 11468 degrees of freedom
+Multiple R-squared:  0.03511,	Adjusted R-squared:  0.03494 
+F-statistic: 208.6 on 2 and 11468 DF,  p-value: < 2.2e-16
+
+
+stargazer::stargazer(model1, type = "text")
+
+===============================================
+                        Dependent variable:    
+                    ---------------------------
+                              INCWAGE          
+-----------------------------------------------
+AGE                        7,809.121***        
+                             (754.053)         
+                                               
+I(AGE2)                     -80.987***         
+                              (9.448)          
+                                               
+female                                         
+                                               
+                                               
+Constant                  -94,615.290***       
+                           (14,437.330)        
+                                               
+-----------------------------------------------
+Observations                  11,471           
+R2                             0.035           
+Adjusted R2                    0.035           
+Residual Std. Error   71,420.260 (df = 11468)  
+F Statistic         208.640*** (df = 2; 11468) 
+===============================================
+Note:               *p<0.1; **p<0.05; ***p<0.01
+
+par(mfrow=c(2,2))
+plot(model1,col="grey",pch=16,cex=1,lwd=1,lty=2)
+
+
+confint(model1, level=0.99)
+ 0.5 %       99.5 %
+(Intercept) -131809.5844 -57420.99264
+AGE            5866.4849   9751.75674
+I(AGE^2)       -105.3269    -56.64775
+female                NA           NA
+
+
+NNobs <- length(INCWAGE)
+set.seed(12345) 
+graph_obs <- (runif(NNobs) < 0.1) 
+dat_graph <-subset(dat_use,graph_obs) 
+a<-plot(INCWAGE ~ jitter(AGE, factor = 2), pch = 16, col = rgb(0.5, 0.7, 0.8, alpha = 0.8), ylim = c(0,150000), data = dat_graph)
+to_be_predicted1 <- data.frame(AGE = 25:55, female = 1)
+to_be_predicted1$yhat <- predict(model1, newdata = to_be_predicted1)
+lines(yhat ~ AGE, data = to_be_predicted1)
+
+Interpretation: 
+
+Being female in general demonstrates a decent income as you age. We can see that females in the workforce tend to earn higher as they gain more experience and expertise in their field. The level of income is roughly 116000. 
+When I ran my  regression,  I found R2 = 0.035 and Adjusted R2 =  0.035  which show a dense relationship of age, gender and level income However, this is a general view of females only. At 99% level of confidence, I can tell that my model does not clearly show any exceptions to the reality. I am just guessing that the population is too chunky.   
+
+In my next model, I will specifically try to look for specifics related to African American, Asians and Hispanics along with their level of education 
+
+> model2 <- lm(INCWAGE ~ AGE + I(AGE^2) + educ_hs + educ_college + educ_advdeg + AfAm + Asian + Hispanic)
+> summary(model2)
+
+Call:
+lm(formula = INCWAGE ~ AGE + I(AGE^2) + educ_hs + educ_college + 
+    educ_advdeg + AfAm + Asian + Hispanic)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-109928  -33289  -11934   13505  591505 
+
+Coefficients: (2 not defined because of singularities)
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  -65258.964  14531.766  -4.491 7.17e-06 ***
+AGE            6823.102    753.103   9.060  < 2e-16 ***
+I(AGE^2)        -69.306      9.427  -7.352 2.09e-13 ***
+educ_hs              NA         NA      NA       NA    
+educ_college -15507.298   1343.021 -11.547  < 2e-16 ***
+educ_advdeg          NA         NA      NA       NA    
+AfAm         -12336.128   2157.832  -5.717 1.11e-08 ***
+Asian          7357.625   2104.570   3.496 0.000474 ***
+Hispanic      -8271.901   2231.274  -3.707 0.000211 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 70780 on 11464 degrees of freedom
+Multiple R-squared:  0.05258,	Adjusted R-squared:  0.05208 
+F-statistic:   106 on 6 and 11464 DF,  p-value: < 2.2e-16
+
+In this model, by splitting females with these selected races, we can easily see that High School degrees and Advanced Degrees are NOT significant at all. It is surprising even no HS has been included in correlation with income. However, it demonstrates that African Americans and Hispanics presence in the subset is significant in relation to low degrees while Asian females carry  high degrees. 
+
+> summary(residuals(model1))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -93628  -33235  -12346       0   13043  588004 
+ 
+> NNobs <- length(INCWAGE)
+> set.seed(12345) 
+> graph_obs <- (runif(NNobs) < 0.1) 
+> dat_graph <-subset(dat_use,graph_obs) 
+> a<-plot(INCWAGE ~ jitter(AGE, factor = 2), pch = 16, col = rgb(0.5, 0.7, 0.8, alpha = 0.8), ylim = c(0,150000), data = dat_graph)
+> to_be_predicted1 <- data.frame(AGE = 25:55, female = 1)
+> to_be_predicted1$yhat <- predict(model1, newdata = to_be_predicted1)
+Warning message:
+In predict.lm(model1, newdata = to_be_predicted1) :
+  prediction from a rank-deficient fit may be misleading
+> lines(yhat ~ AGE, data = to_be_predicted1)
+> initmax <- max(to_be_predicted1$yhat)
+> detach()
+> initmax <- max(to_be_predicted1$yhat)
+
+> model2 <- lm(INCWAGE ~ AGE + I(AGE^2) + educ_hs + educ_college + educ_advdeg + AfAm + Asian + Hispanic)
+> summary(model2)
+
+Call:
+lm(formula = INCWAGE ~ AGE + I(AGE^2) + educ_hs + educ_college + 
+    educ_advdeg + AfAm + Asian + Hispanic)
+
+model3<-lm(INCWAGE~AGE+I(AGE^2)+I(AGE^3)+I(AGE^4)+female,data=dat_use)
+summary(model3)
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-109928  -33289  -11934   13505  591505 
+
+Coefficients: (2 not defined because of singularities)
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  -65258.964  14531.766  -4.491 7.17e-06 ***
+AGE            6823.102    753.103   9.060  < 2e-16 ***
+I(AGE^2)        -69.306      9.427  -7.352 2.09e-13 ***
+educ_hs              NA         NA      NA       NA    
+educ_college -15507.298   1343.021 -11.547  < 2e-16 ***
+educ_advdeg          NA         NA      NA       NA    
+AfAm         -12336.128   2157.832  -5.717 1.11e-08 ***
+Asian          7357.625   2104.570   3.496 0.000474 ***
+Hispanic      -8271.901   2231.274  -3.707 0.000211 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 70780 on 11464 degrees of freedom
+Multiple R-squared:  0.05258,	Adjusted R-squared:  0.05208 
+F-statistic:   106 on 6 and 11464 DF,  p-value: < 2.2e-16
+
+> summary(residuals(model1))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -93628  -33235  -12346       0   13043  588004
+> stargazer::stargazer(model2, type = "text")
+
+===============================================
+                        Dependent variable:    
+                    ---------------------------
+                              INCWAGE          
+-----------------------------------------------
+AGE                        6,823.102***        
+                             (753.103)         
+                                               
+I(AGE2)                     -69.306***         
+                              (9.427)          
+                                               
+educ_hs                                        
+                                               
+                                               
+educ_college              -15,507.300***       
+                            (1,343.021)        
+                                               
+educ_advdeg                                    
+                                               
+                                               
+AfAm                      -12,336.130***       
+                            (2,157.832)        
+                                               
+Asian                      7,357.625***        
+                            (2,104.570)        
+                                               
+Hispanic                   -8,271.901***       
+                            (2,231.274)        
+                                               
+Constant                  -65,258.960***       
+                           (14,531.770)        
+                                               
+-----------------------------------------------
+Observations                  11,471           
+R2                             0.053           
+Adjusted R2                    0.052           
+Residual Std. Error   70,783.050 (df = 11464)  
+F Statistic         106.039*** (df = 6; 11464) 
+===============================================
+Note:               *p<0.1; **p<0.05; ***p<0.01
+
+
+> confint(model2, level=0.99)
+                     0.5 %       99.5 %
+(Intercept)  -102696.54610 -27821.38251
+AGE             4882.91577   8763.28893
+I(AGE^2)         -93.59148    -45.01959
+educ_hs                 NA           NA
+educ_college  -18967.26829 -12047.32848
+educ_advdeg             NA           NA
+AfAm          -17895.26169  -6776.99501
+Asian           1935.70833  12779.54122
+Hispanic      -14020.24048  -2523.56223
+
+This model shows a stronger relationship between degrees and racial composition of labor force in relation with the level of income, 
+Age squared is statistically  significant and demonstrates the main argument. However, i would argue that both Hispanics and African American females presence in the labor force demonstrate of the less propensity  to earn higher degrees. 
+
+The composure with other variables is very much stronger as well. 
+
+model3<-lm(INCWAGE~AGE+I(AGE^2)+I(AGE^3)+I(AGE^4)+female + AfAm + Asian + Hispanic, data=dat_use)
+summary(model3)
+ > model3<-lm(INCWAGE~AGE+I(AGE^2)+I(AGE^3)+I(AGE^4)+female + AfAm + Asian + Hispanic,data=dat_use)
+> summary(model3)
+
+Call:
+lm(formula = INCWAGE ~ AGE + I(AGE^2) + I(AGE^3) + I(AGE^4) + 
+    female + AfAm + Asian + Hispanic, data = dat_use)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-105160  -33002  -11952   13264  586264 
+
+Coefficients: (1 not defined because of singularities)
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  5.373e+05  3.475e+05   1.546  0.12205    
+AGE         -6.384e+04  3.702e+04  -1.724  0.08467 .  
+I(AGE^2)     2.893e+03  1.449e+03   1.997  0.04587 *  
+I(AGE^3)    -5.341e+01  2.469e+01  -2.163  0.03056 *  
+I(AGE^4)     3.505e-01  1.548e-01   2.264  0.02359 *  
+female              NA         NA      NA       NA    
+AfAm        -1.362e+04  2.167e+03  -6.286 3.39e-10 ***
+Asian        6.613e+03  2.115e+03   3.126  0.00177 ** 
+Hispanic    -9.784e+03  2.239e+03  -4.369 1.26e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 71170 on 11463 degrees of freedom
+Multiple R-squared:  0.04233,	Adjusted R-squared:  0.04175 
+F-statistic: 72.38 on 7 and 11463 DF,  p-value: < 2.2e-16
+
+stargazer::stargazer(model3, type = "text")
+
+===============================================
+                        Dependent variable:    
+                    ---------------------------
+                              INCWAGE          
+-----------------------------------------------
+AGE                        -63,843.490*        
+                           (37,024.890)        
+                                               
+I(AGE2)                     2,892.890**        
+                            (1,448.734)        
+                                               
+I(AGE3)                      -53.406**         
+                             (24.690)          
+                                               
+I(AGE4)                       0.350**          
+                              (0.155)          
+                                               
+female                                         
+                                               
+                                               
+AfAm                      -13,618.210***       
+                            (2,166.603)        
+                                               
+Asian                      6,612.911***        
+                            (2,115.286)        
+                                               
+Hispanic                   -9,783.945***       
+                            (2,239.457)        
+                                               
+Constant                    537,330.100        
+                           (347,488.800)       
+                                               
+-----------------------------------------------
+Observations                  11,471           
+R2                             0.042           
+Adjusted R2                    0.042           
+Residual Std. Error   71,168.040 (df = 11463)  
+F Statistic          72.382*** (df = 7; 11463) 
+===============================================
+Note:               *p<0.1; **p<0.05; ***p<0.01
+> 
+par(mfrow=c(2,2))
+plot(model1,col="grey",pch=16,cex=1,lwd=1,lty=2)
+
+
+> confint(model3, level=0.99)
+
+ 0.5 %        99.5 %
+(Intercept) -3.578909e+05  1.432551e+06
+AGE         -1.592292e+05  3.154220e+04
+I(AGE^2)    -8.394240e+02  6.625204e+03
+I(AGE^3)    -1.170136e+02  1.020205e+01
+I(AGE^4)    -4.833598e-02  7.492721e-01
+female                 NA            NA
+AfAm        -1.919994e+04 -8.036484e+03
+Asian        1.163389e+03  1.206243e+04
+Hispanic    -1.555336e+04 -4.014525e+03
+> 
+> NNobs <- length(INCWAGE)
+> set.seed(12345) 
+> graph_obs <- (runif(NNobs) < 0.1) 
+> dat_graph <-subset(dat_use,graph_obs) 
+> a<-plot(INCWAGE ~ jitter(AGE, factor = 2), pch = 16, col = rgb(0.5, 0.7, 0.8, alpha = 0.8), ylim = c(0,150000), data = dat_graph)
+> to_be_predicted1 <- data.frame(AGE = 25:55, female = 1)
+> to_be_predicted1$yhat <- predict(model1, newdata = to_be_predicted1)
+Warning message:
+In predict.lm(model1, newdata = to_be_predicted1) :
+  prediction from a rank-deficient fit may be misleading
+> lines(yhat ~ AGE, data = to_be_predicted1)
+> initmax <- max(to_be_predicted1$yhat)
+
+summary(residuals(model3))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-105160  -33002  -11952       0   13264  586264 
+par(mfrow=c(2,2))
+plot(model3,col="grey",pch=16,cex=1,lwd=1,lty=2)
+
+
+
+ detach(dat_use)
+Throughout these three models I have tried to demonstrate the relationship  between age, income, race and level of income for females only. Predicting that longlasting service in a field does not guarantee higher income.Also, the racial bias in this sample demonstrates that the presence of African American and Hispanics with lower degrees compared to Asians is quite interesting. 
+I am mostly confident that it depends on the location of these jobs. It would be interested to see how family sizes and incomes would play  roles in this subset. 
+
+However, due to  time constraints, I definitely believe that this population does really reflect  female retirees or old female workers as I am limited to 55 years. 
+
+I also noticed that the higher income did surpass 120000 in all three models setting up the debate over what would be the income level of males with the same level of education and years in the services. 
+
+ 
